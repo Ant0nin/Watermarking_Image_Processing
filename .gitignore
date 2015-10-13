@@ -1,0 +1,7 @@
+*.vcxproj
+*.filters
+*.user
+Debug/
+x64/
+Tatouage_image_OpenCL/Debug/
+Tatouage_image_OpenCL/x64/
