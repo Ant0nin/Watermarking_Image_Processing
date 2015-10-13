@@ -13,13 +13,32 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Fichiers sources\utils">
+      <UniqueIdentifier>{79d8a4da-bd32-453a-9702-63bf829aabb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\kernel">
+      <UniqueIdentifier>{58463856-8850-4e67-9656-7cdaa87fa56f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BmpMaxValue_seq.cpp">
-      <Filter>Fichiers sources</Filter>
+    <ClCompile Include="bmpfuncs.cpp">
+      <Filter>Fichiers sources\utils</Filter>
     </ClCompile>
     <ClCompile Include="PlatformAndDevices.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="opencl_errors.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="bmpfuncs.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernel\kernelBmpMaxValue.cl">
+      <Filter>Fichiers sources\kernel</Filter>
+    </None>
   </ItemGroup>
 </Project>

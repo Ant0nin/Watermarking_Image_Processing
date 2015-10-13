@@ -1,2 +1,2 @@
-#TargetFrameworkVersion=v4.0:PlatformToolSet=v140:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
-Debug|x64|D:\Workspace\OpenCL\Tatouage_image_OpenCL\|
+#TargetFrameworkVersion=v4.0:PlatformToolSet=v120:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
+Debug|x64|D:\Mis documentos\Master ISICG\semestre 1\GPU\Tatouage_image_OpenCL\|

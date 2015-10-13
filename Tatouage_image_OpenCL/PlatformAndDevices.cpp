@@ -62,4 +62,4 @@ int main(int argc, char **argv) {
 	system("pause");
 	if (devices_n == 0) return 1;
 	return 0;
-} // end main
+} // end main w
