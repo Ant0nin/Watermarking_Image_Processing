@@ -10,6 +10,7 @@ do { cl_int _err = _expr; \
 } while (0)
 
 int main(int argc, char **argv) {
+
 	cl_platform_id platforms[100];
 	cl_uint platforms_n = 0;
 	CL_CHECK(clGetPlatformIDs(100, platforms,&platforms_n));
@@ -62,4 +63,4 @@ int main(int argc, char **argv) {
 	system("pause");
 	if (devices_n == 0) return 1;
 	return 0;
-} // end main
+} // end main w
