@@ -73,20 +73,10 @@ int main() {
 	for (int i = 0; i < elementsA; i++) {
 		A[i] = i;
 	}
-	for (int i = 0; i < elementsB; i++) {
-		B[i] = i;
-	}
 	printf("Matriz A\n");
 	for (int r = 0; r < rowsA; r++){
 		for (int c = 0; c < colsA; c++){
 			printf("%i ", A[r*colsA + c]);
-		}
-		printf("\n");
-	}
-	printf("Matriz B\n");
-	for (int r = 0; r < colsA; r++){
-		for (int c = 0; c < colsB; c++){
-			printf("%i ", B[r*colsB + c]);
 		}
 		printf("\n");
 	}
@@ -193,10 +183,10 @@ int main() {
 	//////////////step9//////////////////////
 	// Associate the input and output buffers with the
 	// kernel using clSetKernelArg()
-	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &elements);
+	status = clSetKernelArg(kernel, 0, sizeof(int), &elements);
 	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufferA);
 	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufferB);
-	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &tmpColsA);
+	//status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &bufferC);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
@@ -216,22 +206,18 @@ int main() {
 	//////////////////step12////////////////////////
 	// Use clEnqueueReadBuffer() to read the OpenCL
 	// output buffer (bufferC) to the host output array (C)
-	clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, datasizeC, C, 0, NULL, NULL);
+	size_t countWG = globalWorkSize[0] / localWorkSize;
+	clEnqueueReadBuffer(cmdQueue, bufferB, CL_TRUE, 0, countWG, B, 0, NULL, NULL); // values
+	//clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, countWG, C, 0, NULL, NULL); // position
+
 	// Verify the output
-	printf("Matriz C\n");
-	for (int r = 0; r < rowsA; r++){
-		for (int c = 0; c < colsB; c++){
-			printf("%i ", C[r*colsB + c]);
-		}
-		printf("\n");
+	for (int i = 0; i < countWG; i++){
+		printf("value: %i, ", B[i]);
+		//printf("position: %i, \n", C[i]);
 	}
 	/* 10 13 
 	   28 40
-	*/
-	int wgSize = 8;
-	for (int offset = wgSize; offset > 0; offset >>= 1)
-		printf("%d",offset);
-	
+	*/	
 	/////////////////step13/////////////////////////
 	// Free OpenCL ressources
 	clReleaseKernel(kernel);
