@@ -44,7 +44,7 @@ void main() {
 	unsigned int maxShift = imgLength / msgLength;
 	unsigned int position = 0;
 	unsigned int shift;
-	float diff = 100.0;
+	float diff = 1.0;
 	for (int i = 0; i < msgLength; i++) {
 		
 		shift = 1 + (rand() * (maxShift - 1) / RAND_MAX);
