@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "bmpfuncs.h"
+
 #define CL_CHECK(_expr) \
 do { cl_int _err = _expr; \
 	if (_err == CL_SUCCESS) break; \
@@ -54,32 +56,33 @@ char* readKernelSource(const char* kernelSourcePath, size_t *source_size){
 }
 
 int main() {
-	float *A = NULL; // Input arrayy
-	float *B = NULL; // Input array
-	float *C = NULL; // Output array
-	int rowsA = 8, colsA = 8, colsB = 8;
-	const int elements = rowsA*colsA;//
-	const int elementsA = rowsA*colsA;//
-	const int elementsB = colsA*colsB;//
-	const int elementsC = rowsA*colsB;//
-	size_t datasize = sizeof(float)*elements;
-	size_t datasizeA = sizeof(float)*elementsA;
-	size_t datasizeB = sizeof(float)*elementsB;
-	size_t datasizeC = sizeof(float)*elementsC;
-	A = (float*)malloc(datasizeA);
-	B = (float*)malloc(datasizeB);
-	C = (float*)malloc(datasizeC);
-	// Initialize the input data
-	for (int i = 0; i < elementsA; i++) {
-		A[i] = (float)i;
+	float *image_src = NULL; // Input arrayy
+	float *max_values = NULL; // Output array
+	float *max_pos = NULL; // Output array
+
+	int pixels_len = 1600;
+	// Initialize the input data&
+	size_t datasize = sizeof(float)*pixels_len;
+	image_src = (float*)malloc(datasize);
+	for (int i = 0; i < pixels_len; i++) {
+		image_src[i] = (float)i+30;
 	}
-	printf("Matriz A\n");
-	for (int r = 0; r < rowsA; r++){
-		for (int c = 0; c < colsA; c++){
-			printf("%.1f ", A[r*colsA + c]);
-		}
-		printf("\n");
+
+	
+	/*int height,width;
+	image_src = readImage("image/lena.bmp", &height, &width);
+	pixels_len = height*width;
+	size_t datasize = sizeof(float)*pixels_len;*/
+	
+
+	max_values = (float*)malloc(datasize);
+	max_pos = (float*)malloc(datasize);
+
+	/*printf("Vector A\n");
+	for (int r = 0; r < pixels_len; r++){
+		printf("%.1f ", image_src[r]);
 	}
+	printf("\n");*/
 	// Use this to check the output of each API call
 	cl_int status;
 
@@ -121,14 +124,14 @@ int main() {
 	cl_mem bufferC; // Output MatrizC on the device
 	// Use clCreateBuffer() to create buffer objects
 	// that will contain the data from the host arrays
-	bufferA = clCreateBuffer(context, CL_MEM_READ_ONLY, datasizeA, NULL, &status);
-	bufferB = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasizeB, NULL, &status);
-	bufferC = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasizeC, NULL, &status);
+	bufferA = clCreateBuffer(context, CL_MEM_READ_ONLY, datasize, NULL, &status);
+	bufferB = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasize, NULL, &status);
+	bufferC = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasize, NULL, &status);
 
 	//////////////step6////////////////////////
 	// Use clEnqueueWriteBuffer() to write input array A
 	// to the device buffer bufferA
-	status = clEnqueueWriteBuffer(cmdQueue, bufferA, CL_FALSE, 0, datasizeA, A, 0,
+	status = clEnqueueWriteBuffer(cmdQueue, bufferA, CL_FALSE, 0, datasize, image_src, 0,
 		NULL, NULL);
 
 
@@ -180,7 +183,7 @@ int main() {
 
 	//int tmpColsA = colsA, tmpRowsA = rowsA, tmpRowsB = colsA, tmpColsB = colsB;
 
-	int totalN = elements;
+	int totalN = pixels_len;
 	//////////////step9////////////////////////
 	// Associate the input and output buffers with the
 	// kernel using clSetKernelArg()
@@ -188,17 +191,19 @@ int main() {
 	status = clSetKernelArg(kernel, 0, sizeof(int), &totalN);
 	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufferA);
 	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufferB);
-	status = clSetKernelArg(kernel, 3, sizeof(float), NULL);
+	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &bufferC);
+	status = clSetKernelArg(kernel, 4, pixels_len*sizeof(cl_float), NULL);
+	status = clSetKernelArg(kernel, 5, pixels_len*sizeof(cl_float), NULL);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
 	// items for execution. A workgroup size (local worksize) is not required, but can be used.
 	size_t globalWorkSize[1];
 	// There are 'elements' work-items
-	globalWorkSize[0] = elements;
+	globalWorkSize[0] = pixels_len;
 
 	size_t localWorkSize[1];
-	localWorkSize[0] = 2;
+	localWorkSize[0] = 16;
 
 	//////////////////step11///////////////////
 	// Execute the kernel by using
@@ -211,24 +216,34 @@ int main() {
 	// Use clEnqueueReadBuffer() to read the OpenCL//
 	// output buffer (bufferC) to the host output array (C)
 
-	size_t datasizeOut = sizeof(float)*(elements / localWorkSize[0]);
+	size_t datasizeOut = sizeof(float)*(pixels_len / localWorkSize[0]);
 
-	clEnqueueReadBuffer(cmdQueue, bufferB, CL_TRUE, 0, datasizeOut, B, 0, NULL, NULL);
+	clEnqueueReadBuffer(cmdQueue, bufferB, CL_TRUE, 0, datasizeOut, max_values, 0, NULL, NULL);
+	clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, datasizeOut, max_pos, 0, NULL, NULL);
 	
-	unsigned int countReduction = elements / localWorkSize[0];
+	unsigned int countReduction = pixels_len / (int)localWorkSize[0];
 	// Verify the output
-	printf("Vector resp\n");
+	/*printf("Vector resp\n");
 	for (unsigned int i = 0; i < countReduction; i++){
-		printf("%.1f ", B[i]);
+		printf("%.1f ", max_values[i]);
 		printf("\n");
 	}
+	printf("Vector pos\n");
+	for (unsigned int i = 0; i < countReduction; i++){
+		printf("%.1f ", max_pos[i]);
+		printf("\n");
+	}*/
 	//CPU Work
-	float max = B[0];
+	float max = max_values[0];
+	float pos = max_pos[0];
 	for (unsigned int i = 1; i < countReduction; i++){
-		if (B[i] > max)
-			max = B[i];
+		if (max_values[i] > max){
+			max = max_values[i];
+			pos = max_pos[i];
+		}	
 	}
 	printf("The max element is: %.1f \n",max);
+	printf("The pos of max element is: %.1f \n", pos);
 
 
 	/////////////////step13/////////////////////////
@@ -242,9 +257,9 @@ int main() {
 	clReleaseContext(context);
 
 	// Free host ressources
-	free(A);
-	free(B);
-	free(C);
+	free(image_src);
+	free(max_values);
+	free(max_pos);
 	free(platforms);
 	free(devices);
 	system("pause");
