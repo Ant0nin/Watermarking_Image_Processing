@@ -3,6 +3,8 @@
 
 #include "bmpfuncs.h"
 
+#define MSG_LENGTH 8
+
 void main() {
 
 	time_t t = time(NULL);
@@ -15,8 +17,8 @@ void main() {
 	image2D = readImage(imgPath, &height, &width);
 	int imgLength = width * height;
 
-	const size_t msgLength = 7869;
-	bool message[msgLength] = { 1 };
+	const size_t msgLength = MSG_LENGTH;
+	bool message[msgLength]; // 01010101...
 	bool bit = true;
 	for (int i = 0; i < msgLength; i++) {
 		bit = !bit;
