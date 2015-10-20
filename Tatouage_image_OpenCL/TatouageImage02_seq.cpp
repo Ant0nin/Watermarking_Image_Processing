@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include "bmpfuncs.h"
 
-#define MSG_LENGTH 8
+//#define MSG_LENGTH 1024
 
 void main() {
 
@@ -19,8 +19,16 @@ void main() {
 	image2D_crypted = readImage(pathImage2D_crypted, &width, &height);
 
 	int imgLength = width * height;
-	const int msgLength = MSG_LENGTH;
-	bool message[msgLength];
+
+	int count = 0;
+	for (int i = 0; i < imgLength; i++) {
+		if (image2D_crypted[i] != image2D_clean[i])
+			count++;
+	}
+
+	const size_t msgLength = count;
+	bool *message;
+	message = (bool*)malloc(msgLength);
 
 	int j = 0;
 	for (int i = 0; i < imgLength; i++) {

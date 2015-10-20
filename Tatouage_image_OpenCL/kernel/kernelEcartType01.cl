@@ -1,3 +1,5 @@
+// Throw this code !
+
 _kernel
 
 void generateSampleValues(
@@ -21,7 +23,7 @@ void generateSampleValues(
 			coords.x = i;
 			coords.y = j;
 			
-			float intensity = image[coords.x * coords.y];
+			float intensity = image[coords.x * (coords.y + 1)];
 
 			int index = i*j;
 			outputCoords[index] = coords;
@@ -65,6 +67,7 @@ int2* getBestPixels(__global int2 *coords, __global float *intensities, __global
 	
 	float average = calcAverage(intensities, N);
 	float variance = calcVariance(intensities, average, N);
+	float ecartType = calcEcartType(variance);
 
 	// TODO : Filtrer les valeurs extrêmes
 	// TODO : tri des samples en fct de leurs variances

@@ -3,7 +3,7 @@
 
 #include "bmpfuncs.h"
 
-#define MSG_LENGTH 8
+#define MSG_LENGTH 1024
 
 void main() {
 
@@ -50,7 +50,7 @@ void main() {
 	for (int i = 0; i < msgLength; i++) {
 		
 		shift = 1 + (rand() * (maxShift - 1) / RAND_MAX);
-		position += shift;
+		position = maxShift * i + shift;
 		bit = message[i];
 
 		if (bit == true)
