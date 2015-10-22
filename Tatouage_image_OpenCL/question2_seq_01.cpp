@@ -22,8 +22,13 @@ int main() {
 	bool message[msgLength]; // 01010101...
 	bool bit = true;
 	for (int i = 0; i < msgLength; i++) {
-		bit = !bit;
+		if(i%3==0)
+			bit=1;
+		else
+			bit=0;
+		//bit = !bit;
 		message[i] = bit;
+		printf("%d", bit);
 	}
 
 	/*unsigned int mask = 0x80000000;
@@ -43,17 +48,19 @@ int main() {
 	break;
 	}
 	}*/
+	//80 pixeles
+	//10 msg
+	//cada 8
 
 	unsigned int maxShift = imgLength / msgLength; //attention a l'arrondi
 	unsigned int position = 0;
 	unsigned int shift;
-	float diff = 100.0;
+	float diff = 1.0;
+	printf("Positions=\n");
 	for (int i = 0; i < msgLength; i++) {
-		//printf("%d \n", (rand() % (maxShift - 1) ));
-		shift = 1 + (rand() % (maxShift - 1));
+		shift = rand() % maxShift;
 		position = maxShift * i + shift;
 		bit = message[i];
-
 		if (bit == true)
 			image2D[position] += diff; //!\ Pb valeurs extrêmes
 		else

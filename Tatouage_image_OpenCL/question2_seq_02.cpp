@@ -4,7 +4,7 @@
 
 //#define MSG_LENGTH 1024
 
-void main() {
+int main() {
 
 	char pathImage2D_clean[] = "image/lena.bmp";
 	char pathImage2D_crypted[] = "image/output.bmp";
@@ -29,18 +29,20 @@ void main() {
 	const size_t msgLength = count;
 	bool *message;
 	message = (bool*)malloc(msgLength);
-
+	printf("Differents=%d,\n",count );
 	int j = 0;
 	for (int i = 0; i < imgLength; i++) {
 		if (image2D_crypted[i] < image2D_clean[i]) {
-			message[j] = false;
+			message[j] = 0;
 			j++;
 		}
 		else if (image2D_crypted[i] > image2D_clean[i]) {
-			message[j] = true;
+			message[j] = 1;
 			j++;
 		}
+
 	}
+	printf("Dernier=%d\n",j );
 
 	for (int i = 0; i < msgLength; i++) {
 		printf("%d", message[i]);

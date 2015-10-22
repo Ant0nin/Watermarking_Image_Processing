@@ -1,13 +1,15 @@
 __kernel void decryptMessage(
 	__global float* cleanImage,
 	__global float* cryptedImage,
-	__global bool* outputMsg) {
+	__global bool* outputMsg,
+	const unsigned int SIZE_BLOCK) {
 
-	unsigned int groupId = get_group_id(0);
 	unsigned int globalId = get_global_id(0);
+	unsigned int index=globalId/SIZE_BLOCK;
+
 	if (cryptedImage[globalId] > cleanImage[globalId])
-		outputMsg[groupId] = 1;
+		outputMsg[index] = 1;
 	else if (cryptedImage[globalId] < cleanImage[globalId])
-		outputMsg[groupId] = 0;
+		outputMsg[index] = 0;
 
 }

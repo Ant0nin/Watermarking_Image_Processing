@@ -52,6 +52,11 @@ int main(int argc, char **argv) {
 		printf(" DRIVER_VERSION = %s\n", buffer);
 		CL_CHECK(clGetDeviceInfo(devices[i],CL_DEVICE_MAX_COMPUTE_UNITS,sizeof(buf_uint), &buf_uint, NULL));
 		printf(" DEVICE_MAX_COMPUTE_UNITS =%u\n", (unsigned int)buf_uint);
+		CL_CHECK(clGetDeviceInfo(devices[i],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(size_t), &buf_uint, NULL));
+		printf(" CL_DEVICE_MAX_WORK_GROUP_SIZE =%u\n", (unsigned int)buf_uint);
+		size_t workitem_size[3];
+	  	clGetDeviceInfo(devices[i], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(workitem_size), &workitem_size, NULL);
+	  	printf(" CL_DEVICE_MAX_WORK_ITEM_SIZES:%d / %d / %d \n", (int)workitem_size[0], (int)workitem_size[1], (int)workitem_size[2]);
 		CL_CHECK(clGetDeviceInfo(devices[i],CL_DEVICE_MAX_CLOCK_FREQUENCY,sizeof(buf_uint), &buf_uint, NULL));
 		printf(" DEVICE_MAX_CLOCK_FREQUENCY =%u\n", (unsigned int)buf_uint);
 		CL_CHECK(clGetDeviceInfo(devices[i],

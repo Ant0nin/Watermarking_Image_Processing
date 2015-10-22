@@ -185,6 +185,16 @@ int main() {
 	//int tmpColsA = colsA, tmpRowsA = rowsA, tmpRowsB = colsA, tmpColsB = colsB;
 
 	int totalN = pixels_len;
+	
+	size_t workgroup_size;
+    status = clGetKernelWorkGroupInfo(kernel, devices[0], CL_KERNEL_WORK_GROUP_SIZE,sizeof(size_t), &workgroup_size, NULL);
+
+    size_t localWorkSize = 1024;
+
+	//valider le maximum
+	if(localWorkSize>workgroup_size)
+		localWorkSize=workgroup_size;
+
 	//////////////step9////////////////////////
 	// Associate the input and output buffers with the
 	// kernel using clSetKernelArg()
@@ -193,36 +203,42 @@ int main() {
 	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufferA);
 	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufferB);
 	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &bufferC);
-	status = clSetKernelArg(kernel, 4, 16 * sizeof(cl_float), NULL);
-	status = clSetKernelArg(kernel, 5, 16 * sizeof(cl_float), NULL);
+	status = clSetKernelArg(kernel, 4, localWorkSize * sizeof(cl_float), NULL);
+	status = clSetKernelArg(kernel, 5, localWorkSize * sizeof(cl_float), NULL);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
 	// items for execution. A workgroup size (local worksize) is not required, but can be used.
+	
+
 	size_t globalWorkSize[1];
 	// There are 'elements' work-items
 	globalWorkSize[0] = pixels_len;
 
-	size_t localWorkSize[1];
-	localWorkSize[0] = 16;
+	
 
 	//////////////////step11///////////////////
 	// Execute the kernel by using
 	// clEnqueueNDRangeKernel().
 	// 'globalWorkSize' is the 1D dimension of the work-items
 	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize,
-		localWorkSize, 0, NULL, NULL);
-	printf("status %d,", status);
+		&localWorkSize, 0, NULL, NULL);
+	
 	//////////////////step12////////////////////////
 	// Use clEnqueueReadBuffer() to read the OpenCL//
 	// output buffer (bufferC) to the host output array (C)
 
-	size_t datasizeOut = sizeof(float)*(pixels_len / localWorkSize[0]);
+	printf("pixels_len %d,localWorkSize %d", (int)pixels_len,(int)localWorkSize);
+
+
+	size_t datasizeOut = sizeof(float)*(pixels_len / localWorkSize);
 
 	clEnqueueReadBuffer(cmdQueue, bufferB, CL_TRUE, 0, datasizeOut, max_values, 0, NULL, NULL);
 	clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, datasizeOut, max_pos, 0, NULL, NULL);
 
-	unsigned int countReduction = pixels_len / (int)localWorkSize[0];
+	printf("status %d,", status);
+
+	unsigned int countReduction = pixels_len / (int)localWorkSize;
 	// Verify the output
 	/*printf("Vector resp\n");
 	for (unsigned int i = 0; i < countReduction; i++){
@@ -235,16 +251,18 @@ int main() {
 	printf("\n");
 	}*/
 	//CPU Work
+
 	float max = max_values[0];
 	float pos = max_pos[0];
 	for (unsigned int i = 1; i < countReduction; i++) {
+		//printf("%.1f, ", max_pos[i]);
 		if (max_values[i] > max) {
 			max = max_values[i];
 			pos = max_pos[i];
 		}
 	}
-	printf("The max element is: %.1f \n", max);
-	printf("The pos of max element is: %.1f \n", pos);
+	printf("\nThe max element is: %.1f \n", max);
+	printf("\nThe pos of max element is: %.1f \n", pos);
 
 
 	/////////////////step13/////////////////////////

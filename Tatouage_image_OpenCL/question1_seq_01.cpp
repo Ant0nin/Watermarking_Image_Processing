@@ -25,16 +25,16 @@ int main() {
 	{
 		for (int j = 0; j < w; j++)
 		{
-			int index = i*j + j;
+			int index = i*w + j;
 			float current_px = image_src[index];
-
+			//printf("%f \n ", image_src[index]);
 			if(max < current_px)
 				max = current_px;
 
 			/*if (current_px < 255)
 				image_dest[index] = image_src[index] + 1.0f;
 			else*/
-				image_dest[index] = image_src[index];
+				image_dest[index] = image_src[index]+10;
 
 			//printf("%.2f ,", image_src[i*j+j]);
 		}
