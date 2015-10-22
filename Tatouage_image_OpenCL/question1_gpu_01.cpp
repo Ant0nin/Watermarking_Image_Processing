@@ -15,7 +15,7 @@ do { cl_int _err = _expr; \
 #define MAX_SOURCE_SIZE (0x100000)
 //_CRT_SECURE_NO_DEPRECATE
 
-void debugKernel(cl_program program, cl_device_id *devices){
+void debugKernel(cl_program program, cl_device_id *devices) {
 	// size of the log
 	size_t log_size;
 	clGetProgramBuildInfo(program, devices[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -28,7 +28,7 @@ void debugKernel(cl_program program, cl_device_id *devices){
 	system("pause");
 }
 
-char* readKernelSource(const char* kernelSourcePath, size_t *source_size){
+char* readKernelSource(const char* kernelSourcePath, size_t *source_size) {
 	FILE    *fp = NULL;
 	size_t  sourceLength;
 	char    *sourceString;
@@ -60,27 +60,28 @@ int main() {
 	float *max_values = NULL; // Output array
 	float *max_pos = NULL; // Output array
 
-	int pixels_len = 1600;
-	// Initialize the input data&
-	size_t datasize = sizeof(float)*pixels_len;
-	image_src = (float*)malloc(datasize);
-	for (int i = 0; i < pixels_len; i++) {
-		image_src[i] = (float)i+30;
-	}
 
-	
-	/*int height,width;
+						   // Initialize the input data&
+	int pixels_len = 3072;//3072
+						  /*size_t datasize = sizeof(float)*pixels_len;
+						  image_src = (float*)malloc(datasize);
+						  for (int i = 0; i < pixels_len; i++) {
+						  image_src[i] = (float)i+30;
+						  }*/
+
+
+	int height, width;
 	image_src = readImage("image/lena.bmp", &height, &width);
 	pixels_len = height*width;
-	size_t datasize = sizeof(float)*pixels_len;*/
-	
+	size_t datasize = sizeof(float)*pixels_len;
+
 
 	max_values = (float*)malloc(datasize);
 	max_pos = (float*)malloc(datasize);
 
 	/*printf("Vector A\n");
 	for (int r = 0; r < pixels_len; r++){
-		printf("%.1f ", image_src[r]);
+	printf("%.1f ", image_src[r]);
 	}
 	printf("\n");*/
 	// Use this to check the output of each API call
@@ -122,8 +123,8 @@ int main() {
 	cl_mem bufferA; // Input MatrizA on the device
 	cl_mem bufferB; // Input MatrizB on the device
 	cl_mem bufferC; // Output MatrizC on the device
-	// Use clCreateBuffer() to create buffer objects
-	// that will contain the data from the host arrays
+					// Use clCreateBuffer() to create buffer objects
+					// that will contain the data from the host arrays
 	bufferA = clCreateBuffer(context, CL_MEM_READ_ONLY, datasize, NULL, &status);
 	bufferB = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasize, NULL, &status);
 	bufferC = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasize, NULL, &status);
@@ -144,7 +145,7 @@ int main() {
 	FILE *fp;
 	char *source_str;
 	size_t source_size;
-	fp = fopen("kernel\\Reduction-kernel.cl", "r");
+	fp = fopen("kernel/question1_01.cl", "r");
 	if (!fp) {
 		fprintf(stderr, "Failed to load kernel.\n");
 		exit(1);
@@ -153,7 +154,7 @@ int main() {
 	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	fclose(fp);
 
-	printf("%s", (const char **)&source_str);
+	//printf("%s", (const char **)&source_str);
 
 	cl_program program = clCreateProgramWithSource(context, 1,
 		(const char **)&source_str, (const size_t *)&source_size, &status);
@@ -192,8 +193,8 @@ int main() {
 	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufferA);
 	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufferB);
 	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &bufferC);
-	status = clSetKernelArg(kernel, 4, pixels_len*sizeof(cl_float), NULL);
-	status = clSetKernelArg(kernel, 5, pixels_len*sizeof(cl_float), NULL);
+	status = clSetKernelArg(kernel, 4, 16 * sizeof(cl_float), NULL);
+	status = clSetKernelArg(kernel, 5, 16 * sizeof(cl_float), NULL);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
@@ -211,7 +212,7 @@ int main() {
 	// 'globalWorkSize' is the 1D dimension of the work-items
 	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize,
 		localWorkSize, 0, NULL, NULL);
-	printf("status %d,",status);
+	printf("status %d,", status);
 	//////////////////step12////////////////////////
 	// Use clEnqueueReadBuffer() to read the OpenCL//
 	// output buffer (bufferC) to the host output array (C)
@@ -220,29 +221,29 @@ int main() {
 
 	clEnqueueReadBuffer(cmdQueue, bufferB, CL_TRUE, 0, datasizeOut, max_values, 0, NULL, NULL);
 	clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, datasizeOut, max_pos, 0, NULL, NULL);
-	
+
 	unsigned int countReduction = pixels_len / (int)localWorkSize[0];
 	// Verify the output
 	/*printf("Vector resp\n");
 	for (unsigned int i = 0; i < countReduction; i++){
-		printf("%.1f ", max_values[i]);
-		printf("\n");
+	printf("%.1f ", max_values[i]);
+	printf("\n");
 	}
 	printf("Vector pos\n");
 	for (unsigned int i = 0; i < countReduction; i++){
-		printf("%.1f ", max_pos[i]);
-		printf("\n");
+	printf("%.1f ", max_pos[i]);
+	printf("\n");
 	}*/
 	//CPU Work
 	float max = max_values[0];
 	float pos = max_pos[0];
-	for (unsigned int i = 1; i < countReduction; i++){
-		if (max_values[i] > max){
+	for (unsigned int i = 1; i < countReduction; i++) {
+		if (max_values[i] > max) {
 			max = max_values[i];
 			pos = max_pos[i];
-		}	
+		}
 	}
-	printf("The max element is: %.1f \n",max);
+	printf("The max element is: %.1f \n", max);
 	printf("The pos of max element is: %.1f \n", pos);
 
 

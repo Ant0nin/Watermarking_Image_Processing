@@ -1,19 +1,12 @@
 #include <CL/cl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-
-#define CL_CHECK(_expr) \
-do { cl_int _err = _expr; \
-	if (_err == CL_SUCCESS) break; \
-	fprintf(stderr, "OpenCL Error: '%s' returned %d!\n", #_expr, (int)_err); \
-	abort(); \
-} while (0)
+#include <cstdlib>
+#include "bmpfuncs.h"
 
 #define MAX_SOURCE_SIZE (0x100000)
-//_CRT_SECURE_NO_DEPRECATE
+#define MSG_LENGTH 1024
 
-void debugKernel(cl_program program, cl_device_id *devices){
+void debugKernel(cl_program program, cl_device_id *devices) {
 	// size of the log
 	size_t log_size;
 	clGetProgramBuildInfo(program, devices[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -26,7 +19,7 @@ void debugKernel(cl_program program, cl_device_id *devices){
 	system("pause");
 }
 
-char* readKernelSource(const char* kernelSourcePath, size_t *source_size){
+char* readKernelSource(const char* kernelSourcePath, size_t *source_size) {
 	FILE    *fp = NULL;
 	size_t  sourceLength;
 	char    *sourceString;
@@ -54,32 +47,21 @@ char* readKernelSource(const char* kernelSourcePath, size_t *source_size){
 }
 
 int main() {
-	int *A = NULL; // Input arrayy
-	int *B = NULL; // Input array
-	int *C = NULL; // Output array
-	int rowsA = 8, colsA = 8, colsB=8;
-	const int elements = rowsA*colsA;//
-	const int elementsA = rowsA*colsA;//
-	const int elementsB = colsA*colsB;//
-	const int elementsC = rowsA*colsB;//
-	size_t datasize = sizeof(int)*elements;
-	size_t datasizeA = sizeof(int)*elementsA;
-	size_t datasizeB = sizeof(int)*elementsB;
-	size_t datasizeC = sizeof(int)*elementsC;
-	A = (int*)malloc(datasizeA);
-	B = (int*)malloc(datasizeB);
-	C = (int*)malloc(datasizeC);
-	// Initialize the input data
-	for (int i = 0; i < elementsA; i++) {
-		A[i] = i;
-	}
-	printf("Matriz A\n");
-	for (int r = 0; r < rowsA; r++){
-		for (int c = 0; c < colsA; c++){
-			printf("%i ", A[r*colsA + c]);
-		}
-		printf("\n");
-	}
+
+	char pathImage2D_clean[] = "image/lena.bmp";
+	char pathImage2D_crypted[] = "image/output.bmp";
+
+	int width;
+	int height;
+
+	float* bmpImage_clean;
+	float* bmpImage_crypted;
+
+	bmpImage_clean = readImage(pathImage2D_clean, &width, &height);
+	bmpImage_crypted = readImage(pathImage2D_crypted, &width, &height);
+
+	int imgLength = width * height;
+
 	// Use this to check the output of each API call
 	cl_int status;
 
@@ -116,21 +98,43 @@ int main() {
 	cmdQueue = clCreateCommandQueue(context, devices[0], 0, &status);
 
 	/////////////////step5///////////////////////
-	cl_mem bufferA; // Input MatrizA on the device
-	cl_mem bufferB; // Input MatrizB on the device
-	cl_mem bufferC; // Output MatrizC on the device
-	// Use clCreateBuffer() to create buffer objects
-	// that will contain the data from the host arrays
-	bufferA = clCreateBuffer(context, CL_MEM_READ_ONLY, datasizeA, NULL, &status);
-	bufferB = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasizeB, NULL, &status);
-	bufferC = clCreateBuffer(context, CL_MEM_WRITE_ONLY, datasizeC, NULL, &status);
+
+	cl_mem image2d_clean;
+	cl_mem image2d_crypted;
+	cl_mem buffer_output;
+
+	size_t imageSize = sizeof(float) * width * height;
+
+	image2d_clean = clCreateBuffer(context, CL_MEM_READ_ONLY, imageSize, NULL, &status);
+	image2d_crypted = clCreateBuffer(context, CL_MEM_READ_ONLY, imageSize, NULL, &status);
+
+	/*image2d_clean = clCreateImage2D(context,
+	0, &format,
+	width,
+	height,
+	0, NULL, &status);
+
+	image2d_crypted = clCreateImage2D(context,
+	0, &format,
+	width,
+	height,
+	0, NULL, &status);*/
+	size_t messageSize = MSG_LENGTH;
+
+	buffer_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, messageSize, NULL, &status);
+
 
 	//////////////step6////////////////////////
 	// Use clEnqueueWriteBuffer() to write input array A
 	// to the device buffer bufferA
-	status = clEnqueueWriteBuffer(cmdQueue, bufferA, CL_FALSE, 0, datasizeA, A, 0,
+	size_t origin[3] = { 0,0,0 };
+	size_t region[3] = { width, height, 1 };
+
+	status = clEnqueueWriteBuffer(cmdQueue, image2d_clean, CL_FALSE, 0, imageSize, bmpImage_clean, 0,
 		NULL, NULL);
 
+	status = clEnqueueWriteBuffer(cmdQueue, image2d_crypted, CL_FALSE, 0, imageSize, bmpImage_crypted, 0,
+		NULL, NULL);
 
 	/////////////load file///////////////////////
 	/*size_t programSize=0;
@@ -141,7 +145,7 @@ int main() {
 	FILE *fp;
 	char *source_str;
 	size_t source_size;
-	fp = fopen("kernel\\KernelBmpMaxValue.cl", "r");
+	fp = fopen("kernel/question2_01.cl", "r");
 	if (!fp) {
 		fprintf(stderr, "Failed to load kernel.\n");
 		exit(1);
@@ -162,30 +166,32 @@ int main() {
 	// clCreateProgramWithSource()
 
 	/*cl_program program = clCreateProgramWithSource(context,
-		sizeof(programSource) / sizeof(*programSource), programSource, NULL, &status);*/
+	sizeof(programSource) / sizeof(*programSource), programSource, NULL, &status);*/
 
 	// Build (compile) the program for the devices with
 	// clBuildProgram()
-	status=clBuildProgram(program, numDevices, devices, NULL, NULL, NULL);
+	status = clBuildProgram(program, numDevices, devices, NULL, NULL, NULL);
 	// build failed
 	if (status != CL_SUCCESS) {
 		debugKernel(program, devices);
 		return 1;
 	}
+
 	//////////////step8///////////////////////////
 	cl_kernel kernel = NULL;
 	// Use clCreateKernel() to create a kernel from the
 	// vector addition function (named "vecadd")
-	kernel = clCreateKernel(program, "max_vector", &status);
-
-	int tmpColsA = colsA, tmpRowsA=rowsA,tmpRowsB=colsA,tmpColsB=colsB;
+	kernel = clCreateKernel(program, "decryptMessage", &status);
 
 	//////////////step9//////////////////////
 	// Associate the input and output buffers with the
 	// kernel using clSetKernelArg()
-	status = clSetKernelArg(kernel, 0, sizeof(int), &elements);
-	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufferA);
-	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufferB);
+
+	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &image2d_clean);
+
+	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &image2d_crypted);
+
+	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &buffer_output);
 	//status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &bufferC);
 
 	///////////////step10//////////////////////
@@ -193,47 +199,50 @@ int main() {
 	// items for execution. A workgroup size (local worksize) is not required, but can be used.
 	size_t globalWorkSize[1];
 	// There are 'elements' work-items
-	globalWorkSize[0] = colsB*rowsA;
+	globalWorkSize[0] = imgLength;
 
-	size_t localWorkSize = 2;
+	size_t localWorkSize = globalWorkSize[0] / MSG_LENGTH;
 
 	//////////////////step11//////////////////
 	// Execute the kernel by using
 	// clEnqueueNDRangeKernel().
 	// 'globalWorkSize' is the 1D dimension of the work-items
-	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL, globalWorkSize,
+	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize,
 		&localWorkSize, 0, NULL, NULL);
+
 	//////////////////step12////////////////////////
 	// Use clEnqueueReadBuffer() to read the OpenCL
 	// output buffer (bufferC) to the host output array (C)
-	size_t countWG = globalWorkSize[0] / localWorkSize;
-	clEnqueueReadBuffer(cmdQueue, bufferB, CL_TRUE, 0, countWG, B, 0, NULL, NULL); // values
-	//clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, countWG, C, 0, NULL, NULL); // position
-
+	size_t countWG = MSG_LENGTH;
+	bool* outputMsg = NULL;
+	outputMsg = (bool*)malloc(sizeof(bool) * countWG);
+	clEnqueueReadBuffer(cmdQueue, buffer_output, CL_TRUE, 0, countWG, outputMsg, 0, NULL, NULL); // values
+																								 //clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, countWG, C, 0, NULL, NULL); // position
+	printf("status = %d\n", status);
 	// Verify the output
-	for (int i = 0; i < countWG; i++){
-		printf("value: %i, ", B[i]);
-		//printf("position: %i, \n", C[i]);
+	for (int i = 0; i < MSG_LENGTH; i++) {
+		printf("%d", outputMsg[i]);
 	}
-	/* 10 13 
-	   28 40
-	*/	
+	printf("\n");
+
+
 	/////////////////step13/////////////////////////
 	// Free OpenCL ressources
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
 	clReleaseCommandQueue(cmdQueue);
-	clReleaseMemObject(bufferA);
-	clReleaseMemObject(bufferB);
-	clReleaseMemObject(bufferC);
+	clReleaseMemObject(image2d_clean);
+	clReleaseMemObject(image2d_crypted);
+	clReleaseMemObject(buffer_output);
 	clReleaseContext(context);
 
 	// Free host ressources
-	free(A);
-	free(B);
-	free(C);
+	free(bmpImage_clean);
+	free(bmpImage_crypted);
+	free(outputMsg);
 	free(platforms);
 	free(devices);
+
 	system("pause");
 	return 0;
 }

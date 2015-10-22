@@ -1,14 +1,15 @@
 #include <time.h>
-#include <cstdlib>
+#include <stdlib.h>
+#include <stdio.h>
+
 
 #include "bmpfuncs.h"
 
 #define MSG_LENGTH 1024
 
-void main() {
+int main() {
 
-	time_t t = time(NULL);
-	srand((unsigned)&t);
+	srand(time(NULL));
 
 	char imgPath[] = "image/lena.bmp";
 	int width;
@@ -31,25 +32,25 @@ void main() {
 	int positions[msgLength];
 	int j = 0;
 	bool bit;
-	for (int i = 0; i < imgLength; i++) 
+	for (int i = 0; i < imgLength; i++)
 	{
-		mask = mask >> 1;
-		bit = random & mask;
-		if (bit == 1) {
-			positions[j] = i;
-			j++;
-			if (j >= msgLength)
-				break;
-		}
+	mask = mask >> 1;
+	bit = random & mask;
+	if (bit == 1) {
+	positions[j] = i;
+	j++;
+	if (j >= msgLength)
+	break;
+	}
 	}*/
-	
-	unsigned int maxShift = imgLength / msgLength;
+
+	unsigned int maxShift = imgLength / msgLength; //attention a l'arrondi
 	unsigned int position = 0;
 	unsigned int shift;
-	float diff = 1.0;
+	float diff = 100.0;
 	for (int i = 0; i < msgLength; i++) {
-		
-		shift = 1 + (rand() * (maxShift - 1) / RAND_MAX);
+		//printf("%d \n", (rand() % (maxShift - 1) ));
+		shift = 1 + (rand() % (maxShift - 1));
 		position = maxShift * i + shift;
 		bit = message[i];
 
@@ -60,6 +61,7 @@ void main() {
 	}
 
 	storeImage(image2D, "image/output.bmp", height, width, imgPath);
-	system("pause");
 
+	system("pause");
+	return 0;
 }
