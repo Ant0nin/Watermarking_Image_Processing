@@ -61,7 +61,7 @@ __kernel void maxEcartType(__const unsigned int N, // taille de l'ensemble des é
 		if (accumulator < element) {
 			accumulator = element;
 
-			position = global_index + (512-1) + 2 * (global_index/512) + 3; // d'ou sort ce 3 ?
+			position = global_index + (512-1) + 2 * (int)(global_index/512); // +3 = triche
 		}
 		global_index++;
 	}
