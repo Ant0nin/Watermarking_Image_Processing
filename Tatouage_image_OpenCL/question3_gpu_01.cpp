@@ -4,6 +4,7 @@
 #include "bmpfuncs.h"
 
 #define MAX_SOURCE_SIZE (0x100000)
+#define MSG_LENGTH 1024
 
 void debugKernel(cl_program program, cl_device_id *devices) {
 	// size of the log
@@ -50,8 +51,21 @@ int main() {
 	char pathImage2D_clean[] = "image/lena.bmp";
 	char pathImage2D_crypted[] = "image/output.bmp";
 
-	bool message[] = { 0, 1, 0, 1, 0, 1, 0, 1 };
-	unsigned int msgSize = sizeof(message);
+	const size_t msgSize = MSG_LENGTH;
+	bool message[msgSize]; // 01010101...
+	bool bit = true;
+	for (int i = 0; i < msgSize; i++) {
+		if (i % 3 == 0)
+			bit = 1;
+		else
+			bit = 0;
+		//bit = !bit;
+		message[i] = bit;
+		printf("%d", bit);
+	}
+	printf("\n");
+
+	system("pause");
 
 	int width;
 	int height;
@@ -120,10 +134,10 @@ int main() {
 	//cl_mem image2d_crypted;
 	//cl_mem buffer_output;
 
-	cl_mem image2d_clean = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float) * imgLength, NULL, &status);
+	cl_mem image2d_clean = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * imgLength, NULL, &status);
 	//image2d_crypted = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * datasize, NULL, &status);
 
-	cl_mem output_ecartTypes = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * datasize, NULL, &status);
+	cl_mem output_ecartTypes = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * datasize, NULL, &status);
 	cl_mem output_positionsX = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * datasize, NULL, &status); // pas nécessaire car matrice
 	cl_mem output_positionsY = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * datasize, NULL, &status); // -------------------------'
 
@@ -190,11 +204,10 @@ int main() {
 	status = clSetKernelArg(kernel, 3, sizeof(cl_uint), &sampleWidth);
 	status = clSetKernelArg(kernel, 4, sizeof(cl_uint), &sampleHeight);
 	status = clSetKernelArg(kernel, 5, sizeof(cl_uint), &sampleLenght);
-	status = clSetKernelArg(kernel, 6, sizeof(float) * sampleLenght, NULL);
 
-	status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &output_ecartTypes);
-	status = clSetKernelArg(kernel, 8, sizeof(cl_mem), &output_positionsX);
-	status = clSetKernelArg(kernel, 9, sizeof(cl_mem), &output_positionsY);
+	status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output_ecartTypes);
+	status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &output_positionsX);
+	status = clSetKernelArg(kernel, 8, sizeof(cl_mem), &output_positionsY);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
@@ -229,17 +242,70 @@ int main() {
 	system("pause");
 
 	// Affichage des écarts types et positions respectives
-	/*for (unsigned int i = 0; i < datasize; i++) {
+	for (unsigned int i = 0; i < 16; i++) {
 		printf("X: %d, Y: %d, ecart type: %f \n", positionsX[i], positionsY[i], ecartTypes[i]);
-	}*/
+	}
 
-	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[0], positionsY[0], ecartTypes[0]);
-	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[511], positionsY[511], ecartTypes[511]);
-	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[datasize-1], positionsY[datasize - 1], ecartTypes[datasize - 1]);
+	/*printf("X: %d, Y: %d, ecart type: %f \n", positionsX[0], positionsY[0], ecartTypes[0]);
+	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[1], positionsY[1], ecartTypes[1]);
+	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[2], positionsY[2], ecartTypes[2]);
+	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[3], positionsY[3], ecartTypes[3]);*/
 
-	// TODO : trier
+	system("pause");
 
-	//storeImage(ecartTypes, pathImage2D_crypted, (height - 2), (width - 2), pathImage2D_clean);
+	float *maxEcartTypes = NULL;
+	maxEcartTypes = (float*)malloc(sizeof(float) * msgSize);
+
+	kernel = clCreateKernel(program, "maxEcartType", &status);
+
+	cl_mem output_pos = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(int) * msgSize, NULL, &status);
+
+	int blockSize = datasize / msgSize;
+
+	status = clSetKernelArg(kernel, 0, sizeof(cl_int), &datasize);
+	status = clSetKernelArg(kernel, 1, sizeof(cl_int), &blockSize);
+	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_ecartTypes);
+	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &output_pos);
+
+	size_t globalWorkSize2[1];
+	globalWorkSize2[0] = msgSize;
+	const size_t localWorkSize = 1; // utiliser modulo dans la formule pour éviter l'arrondi
+
+	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize2, &localWorkSize, 0, NULL, NULL);
+
+	int *pos = NULL;
+	pos = (int*)malloc(sizeof(int) * msgSize);
+
+	status = clEnqueueReadBuffer(cmdQueue, output_pos, CL_TRUE, 0, sizeof(int) * msgSize, pos, 0, NULL, NULL);
+
+	for (int i = 0; i < msgSize; i++) {
+		printf("Max ecart type position: %d\n", pos[i]);
+	}
+
+	system("pause");
+
+	kernel = clCreateKernel(program, "writeMessageOnImage", &status);
+
+	cl_mem message_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * msgSize, NULL, &status);
+
+	//////////////step9//////////////////////
+	// Associate the input and output buffers with the
+	// kernel using clSetKernelArg()
+	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &message_buffer);
+	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_pos);
+	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &image2d_clean);
+
+	///////////////step10//////////////////////
+	// Define an index space (global work size) of work
+	// items for execution. A workgroup size (local worksize) is not required, but can be used.
+	// There are 'elements' work-items
+	globalWorkSize2[0] = msgSize;
+
+	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize2, NULL, 0, NULL, NULL);
+
+	status = clEnqueueReadBuffer(cmdQueue, image2d_clean, CL_TRUE, 0, sizeof(float) * imgLength, bmpImage_clean, 0, NULL, NULL);
+
+	storeImage(bmpImage_clean, pathImage2D_crypted, width, height, pathImage2D_clean);
 
 	/////////////////step13/////////////////////////
 	// Free OpenCL ressources
