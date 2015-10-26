@@ -9,7 +9,7 @@
 
 #define MAX_SOURCE_SIZE (0x100000)
 
-cl_int autoCreateCmdQueueAndContext(cl_command_queue *cmdQueue, cl_context *context) {
+cl_int autoCreateCmdQueueAndContext(cl_command_queue *cmdQueue, cl_context *context, cl_device_id *devices) {
 
 	cl_int status = 0;
 	
@@ -21,7 +21,6 @@ cl_int autoCreateCmdQueueAndContext(cl_command_queue *cmdQueue, cl_context *cont
 	status = clGetPlatformIDs(numPlatforms, platforms, NULL);
 
 	cl_uint numDevices = 0;
-	cl_device_id *devices = NULL;
 
 	status = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
 	devices = (cl_device_id*)malloc(numDevices *sizeof(cl_device_id));
@@ -33,7 +32,7 @@ cl_int autoCreateCmdQueueAndContext(cl_command_queue *cmdQueue, cl_context *cont
 	return status;
 }
 
-cl_program createKernelProgramFromFile(cl_context *context, const char* kernelName, cl_int *status) {
+cl_program createKernelProgramFromFile(cl_context *context, const char* kernelFileName, cl_int *status) {
 	
 	FILE *fp;
 	char *source_str;
@@ -41,7 +40,7 @@ cl_program createKernelProgramFromFile(cl_context *context, const char* kernelNa
 	char filename[64];
 
 	strcpy(filename, "kernel/");
-	strcat(filename, kernelName);
+	strcat(filename, kernelFileName);
 	strcat(filename, ".cl");
 
 	fp = fopen(filename, "r");
@@ -60,14 +59,14 @@ cl_program createKernelProgramFromFile(cl_context *context, const char* kernelNa
 }
 
 void debugKernelWithLog(cl_program program, cl_device_id *devices) {
-	// size of the log
+
 	size_t log_size;
 	clGetProgramBuildInfo(program, devices[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-	// Allocate memory for the log
+
 	char *log = (char *)malloc(log_size);
-	// Get the log
+
 	clGetProgramBuildInfo(program, devices[0], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-	// Print the log
+
 	printf("%s\n", log);
 	system("pause");
 }
