@@ -124,7 +124,7 @@ int main() {
 	// Create a command queue using
 	// clCreateCommandQueue(), and associate it with
 	// the device you want to execute on
-	cmdQueue = clCreateCommandQueue(context, devices[0], 0, &status);
+	cmdQueue = clCreateCommandQueue(context, devices[0], CL_QUEUE_PROFILING_ENABLE, &status);
 
 	/////////////////step5///////////////////////
 	/*cl_image_format format;
@@ -223,17 +223,24 @@ int main() {
 	positionsX[0] = 456;
 	positionsY[0] = 456;*/
 
-	//////////////////step11//////////////////
-	// Execute the kernel by using
-	// clEnqueueNDRangeKernel().
-	// 'globalWorkSize' is the 1D dimension of the work-items
-	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL, globalWorkSize, NULL, 0, NULL, NULL);
-	//////////////////step12////////////////////////
-	// Use clEnqueueReadBuffer() to read the OpenCL
-	// output buffer (bufferC) to the host output array (C)
+	clFinish(cmdQueue);
+
+	cl_event event;
+
+	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL, globalWorkSize, NULL, 0, NULL, &event);
 	
-	//clEnqueueReadBuffer(cmdQueue, buffer_output, CL_TRUE, 0, countWG, outputMsg, 0, NULL, NULL); // values
-	//clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, countWG, C, 0, NULL, NULL); // position
+	clWaitForEvents(1, &event);
+
+	cl_ulong time_start, time_end;
+	double total_time;
+
+	clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+	clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+	total_time = time_end - time_start;
+
+	printf("\nTemps d'execution = %0.3f ms\n", (total_time / 1000000.0));
+
+	system("pause");
 
 	status = clEnqueueReadBuffer(cmdQueue, output_ecartTypes, CL_TRUE, 0, sizeof(float) * datasize, ecartTypes, 0, NULL, NULL);
 	status = clEnqueueReadBuffer(cmdQueue, output_positionsX, CL_TRUE, 0, sizeof(int) * datasize, positionsX, 0, NULL, NULL);
