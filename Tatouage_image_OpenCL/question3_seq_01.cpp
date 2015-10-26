@@ -63,6 +63,7 @@ int main() {
 				}
 			}
 			avg = avg / (ecartSize*ecartSize);
+			ecart = 0;
 			//calcul ecart-type
 			for (yi = 0; yi < ecartSize; yi++)
 			{
