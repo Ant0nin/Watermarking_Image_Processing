@@ -77,7 +77,7 @@ __kernel void writeMessageOnImage(__global bool *message,
 	uint globalId = get_global_id(0);
 
 	if (message[globalId] == 1)
-		image[positions[globalId]] += 100.0;
+		image[positions[globalId]] += 100.0; // TODO : change to 1.0
 	else
-		image[positions[globalId]] -= 100.0;
+		image[positions[globalId]] -= 100.0; // TODO : change to 1.0
 }

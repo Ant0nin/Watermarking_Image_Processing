@@ -67,29 +67,26 @@ int main() {
 
 	system("pause");
 
-	int width;
-	int height;
+	int imgWidth;
+	int imgHeight;
 
-	float* bmpImage_clean;
-	float* bmpImage_crypted;
+	float* bmpImage;
 
-	bmpImage_clean = readImage(pathImage2D_clean, &width, &height);
-	//bmpImage_crypted = readImage(pathImage2D_crypted, &width, &height);
-	const int imgLength = (const int)(width * height);
-	const int datasize = (const int)((width-2) * (height-2)); // Donner cette valeur pour la globalWorkSize
+	bmpImage = readImage(pathImage2D_clean, &imgWidth, &imgHeight);
+	const int imgLength = (const int)(imgWidth * imgHeight);
 
 	unsigned int sampleWidth = 3;
 	unsigned int sampleHeight = 3;
 	unsigned int sampleLenght = sampleWidth * sampleHeight;
 
 	float *ecartTypes = NULL;
-	ecartTypes = (float*)malloc(sizeof(float) * datasize);
+	ecartTypes = (float*)malloc(sizeof(float) * imgLength);
 
 	int *positionsX = NULL;
-	positionsX = (int*)malloc(sizeof(int) * datasize);
+	positionsX = (int*)malloc(sizeof(int) * imgLength);
 
 	int *positionsY = NULL;
-	positionsY = (int*)malloc(sizeof(int) * datasize);
+	positionsY = (int*)malloc(sizeof(int) * imgLength);
 
 	// Use this to check the output of each API call
 	cl_int status;
@@ -124,41 +121,29 @@ int main() {
 	// Create a command queue using
 	// clCreateCommandQueue(), and associate it with
 	// the device you want to execute on
-	cmdQueue = clCreateCommandQueue(context, devices[0], CL_QUEUE_PROFILING_ENABLE, &status);
+	cmdQueue = clCreateCommandQueue(context, devices[0], 0, &status);
 
 	/////////////////step5///////////////////////
-	/*cl_image_format format;
+	cl_image_format format;
 	format.image_channel_order = CL_R;
-	format.image_channel_data_type = CL_FLOAT;*/
+	format.image_channel_data_type = CL_FLOAT;
 
-	//cl_mem image2d_crypted;
-	//cl_mem buffer_output;
+	cl_mem mem_image2d = clCreateImage2D(context, 0, &format, imgWidth, imgHeight, 0, NULL, &status);
+	
+	size_t origin[3] = { 0,0,0 };
+	size_t region[3] = { imgWidth, imgHeight, 1 };
+	status = clEnqueueWriteImage(cmdQueue, mem_image2d, CL_FALSE, origin, region, 0, 0, bmpImage, 0, NULL, NULL);
+	
+	cl_sampler sampler = clCreateSampler(context, CL_FALSE, CL_ADDRESS_CLAMP_TO_EDGE, CL_FILTER_NEAREST, &status);
 
-	cl_mem image2d_clean = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * imgLength, NULL, &status);
-	//image2d_crypted = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * datasize, NULL, &status);
-
-	cl_mem output_ecartTypes = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * datasize, NULL, &status);
-	cl_mem output_positionsX = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * datasize, NULL, &status); // pas nécessaire car matrice
-	cl_mem output_positionsY = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * datasize, NULL, &status); // -------------------------'
-
-	//////////////step6////////////////////////
-	// Use clEnqueueWriteBuffer() to write input array A
-	// to the device buffer bufferA
-	/*size_t origin[3] = { 0,0,0 };
-	size_t region[3] = { width, height, 1 };*/
-
-	status = clEnqueueWriteBuffer(cmdQueue, image2d_clean, CL_FALSE, 0, sizeof(float) * imgLength, bmpImage_clean, 0, NULL, NULL);
+	cl_mem mem_ecartTypes = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * imgLength, NULL, &status);
 
 	/////////////load file///////////////////////
-	/*size_t programSize=0;
-	const char * filename = "MultipliMatriz-kernel.cpp";
-	char* sProgramSource = readKernelSource(filename, &programSize);
-	cl_program program = clCreateProgramWithSource(context, 1, (const char **)&sProgramSource, &programSize, &status);*/
 
 	FILE *fp;
 	char *source_str;
 	size_t source_size;
-	fp = fopen("kernel/question3_01.cl", "r");
+	fp = fopen("kernel/question3_02.cl", "r");
 	if (!fp) {
 		fprintf(stderr, "Failed to load kernel.\n");
 		exit(1);
@@ -174,89 +159,62 @@ int main() {
 
 	//////////////////////////////////////////////
 
-	///////////////step7/////////////////////////////
-	// Create a program using
-	// clCreateProgramWithSource()
-
-	/*cl_program program = clCreateProgramWithSource(context,
-	sizeof(programSource) / sizeof(*programSource), programSource, NULL, &status);*/
-
-	// Build (compile) the program for the devices with
-	// clBuildProgram()
 	status = clBuildProgram(program, numDevices, devices, NULL, NULL, NULL);
 	// build failed
 	if (status != CL_SUCCESS) {
 		debugKernel(program, devices);
 		return 1;
 	}
-	//////////////step8///////////////////////////
-	// Use clCreateKernel() to create a kernel from the
-	// vector addition function (named "vecadd")
+
 	cl_kernel kernel = clCreateKernel(program, "calcEcartTypeForEachSample", &status);
 
 	//////////////step9//////////////////////
 	// Associate the input and output buffers with the
 	// kernel using clSetKernelArg()
-	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &image2d_clean);
-	status = clSetKernelArg(kernel, 1, sizeof(cl_int), &width);
-	status = clSetKernelArg(kernel, 2, sizeof(cl_int), &height);
+	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &mem_image2d);
+	status = clSetKernelArg(kernel, 1, sizeof(cl_int), &imgWidth);
+	status = clSetKernelArg(kernel, 2, sizeof(cl_int), &imgHeight);
 
 	status = clSetKernelArg(kernel, 3, sizeof(cl_uint), &sampleWidth);
 	status = clSetKernelArg(kernel, 4, sizeof(cl_uint), &sampleHeight);
 	status = clSetKernelArg(kernel, 5, sizeof(cl_uint), &sampleLenght);
 
-	status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output_ecartTypes);
-	status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &output_positionsX);
-	status = clSetKernelArg(kernel, 8, sizeof(cl_mem), &output_positionsY);
+	status = clSetKernelArg(kernel, 6, sizeof(cl_sampler), &sampler);
+	status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &mem_ecartTypes);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
 	// items for execution. A workgroup size (local worksize) is not required, but can be used.
 	size_t globalWorkSize[2];
 	// There are 'elements' work-items
-	globalWorkSize[0] = width;
-	globalWorkSize[1] = height;
+	globalWorkSize[0] = imgWidth;
+	globalWorkSize[1] = imgHeight;
 
 	//size_t localWorkSize = 16;
 
-	/*ecartTypes[0] = 123.0;
-	positionsX[0] = 456;
-	positionsY[0] = 456;*/
+	//////////////////step11//////////////////
+	// Execute the kernel by using
+	// clEnqueueNDRangeKernel().
+	// 'globalWorkSize' is the 1D dimension of the work-items
+	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL, globalWorkSize, NULL, 0, NULL, NULL);
+	//////////////////step12////////////////////////
+	// Use clEnqueueReadBuffer() to read the OpenCL
+	// output buffer (bufferC) to the host output array (C)
 
-	clFinish(cmdQueue);
+	//clEnqueueReadBuffer(cmdQueue, buffer_output, CL_TRUE, 0, countWG, outputMsg, 0, NULL, NULL); // values
+	//clEnqueueReadBuffer(cmdQueue, bufferC, CL_TRUE, 0, countWG, C, 0, NULL, NULL); // position
 
-	cl_event event;
+	float *ecartsType = NULL;
+	ecartsType = (float*)malloc(sizeof(float) * imgLength);
 
-	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 2, NULL, globalWorkSize, NULL, 0, NULL, &event);
-	
-	clWaitForEvents(1, &event);
-
-	cl_ulong time_start, time_end;
-	double total_time;
-
-	clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-	clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-	total_time = time_end - time_start;
-
-	printf("\nTemps d'execution = %0.3f ms\n", (total_time / 1000000.0));
-
-	system("pause");
-
-	status = clEnqueueReadBuffer(cmdQueue, output_ecartTypes, CL_TRUE, 0, sizeof(float) * datasize, ecartTypes, 0, NULL, NULL);
-	status = clEnqueueReadBuffer(cmdQueue, output_positionsX, CL_TRUE, 0, sizeof(int) * datasize, positionsX, 0, NULL, NULL);
-	status = clEnqueueReadBuffer(cmdQueue, output_positionsY, CL_TRUE, 0, sizeof(int) * datasize, positionsY, 0, NULL, NULL);
+	status = clEnqueueReadBuffer(cmdQueue, mem_ecartTypes, CL_TRUE, 0, sizeof(float) * imgLength, ecartsType, 0, NULL, NULL);
 
 	system("pause");
 
 	// Affichage des écarts types et positions respectives
 	for (unsigned int i = 0; i < 16; i++) {
-		printf("X: %d, Y: %d, ecart type: %f \n", positionsX[i], positionsY[i], ecartTypes[i]);
+		printf("ecart type: %f \n", ecartTypes[i]);
 	}
-
-	/*printf("X: %d, Y: %d, ecart type: %f \n", positionsX[0], positionsY[0], ecartTypes[0]);
-	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[1], positionsY[1], ecartTypes[1]);
-	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[2], positionsY[2], ecartTypes[2]);
-	printf("X: %d, Y: %d, ecart type: %f \n", positionsX[3], positionsY[3], ecartTypes[3]);*/
 
 	system("pause");
 
@@ -265,14 +223,14 @@ int main() {
 
 	kernel = clCreateKernel(program, "maxEcartType", &status);
 
-	cl_mem output_pos = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(int) * msgSize, NULL, &status);
+	cl_mem mem_positions = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(int) * msgSize, NULL, &status);
 
-	int blockSize = datasize / msgSize;
+	int blockSize = imgLength / msgSize;
 
-	status = clSetKernelArg(kernel, 0, sizeof(cl_int), &datasize);
+	status = clSetKernelArg(kernel, 0, sizeof(cl_int), &imgLength);
 	status = clSetKernelArg(kernel, 1, sizeof(cl_int), &blockSize);
-	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_ecartTypes);
-	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &output_pos);
+	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &ecartsType);
+	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &mem_positions);
 
 	size_t globalWorkSize2[1];
 	globalWorkSize2[0] = msgSize;
@@ -283,7 +241,7 @@ int main() {
 	int *pos = NULL;
 	pos = (int*)malloc(sizeof(int) * msgSize);
 
-	status = clEnqueueReadBuffer(cmdQueue, output_pos, CL_TRUE, 0, sizeof(int) * msgSize, pos, 0, NULL, NULL);
+	status = clEnqueueReadBuffer(cmdQueue, mem_positions, CL_TRUE, 0, sizeof(int) * msgSize, pos, 0, NULL, NULL);
 
 	for (int i = 0; i < msgSize; i++) {
 		printf("Max ecart type position: %d\n", pos[i]);
@@ -293,14 +251,14 @@ int main() {
 
 	kernel = clCreateKernel(program, "writeMessageOnImage", &status);
 
-	cl_mem message_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * msgSize, NULL, &status);
+	cl_mem mem_message = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * msgSize, NULL, &status);
 
 	//////////////step9//////////////////////
 	// Associate the input and output buffers with the
 	// kernel using clSetKernelArg()
-	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &message_buffer);
-	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_pos);
-	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &image2d_clean);
+	status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &mem_message);
+	status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &mem_positions);
+	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &mem_image2d);
 
 	///////////////step10//////////////////////
 	// Define an index space (global work size) of work
@@ -310,21 +268,24 @@ int main() {
 
 	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize2, NULL, 0, NULL, NULL);
 
-	status = clEnqueueReadBuffer(cmdQueue, image2d_clean, CL_TRUE, 0, sizeof(float) * imgLength, bmpImage_clean, 0, NULL, NULL);
+	status = clEnqueueReadBuffer(cmdQueue, mem_ecartTypes, CL_TRUE, 0, sizeof(float) * imgLength, bmpImage, 0, NULL, NULL);
 
-	storeImage(bmpImage_clean, pathImage2D_crypted, width, height, pathImage2D_clean);
+	storeImage(bmpImage, pathImage2D_crypted, imgWidth, imgHeight, pathImage2D_clean);
 
 	/////////////////step13/////////////////////////
+
+	// TODO : free ALL resources
+
 	// Free OpenCL ressources
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
 	clReleaseCommandQueue(cmdQueue);
-	clReleaseMemObject(image2d_clean);
+	//clReleaseMemObject(image2d_clean);
 	//clReleaseMemObject(image2d_crypted);
 	clReleaseContext(context);
 
 	// Free host ressources
-	free(bmpImage_clean);
+	//free(bmpImage_clean);
 	//free(bmpImage_crypted);
 	free(platforms);
 	free(devices);
