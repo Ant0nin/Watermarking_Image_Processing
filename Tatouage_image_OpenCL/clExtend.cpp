@@ -6,30 +6,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "opencl_errors.h"
 
 #define MAX_SOURCE_SIZE (0x100000)
 
-cl_int autoCreateCmdQueueAndContext(cl_command_queue *cmdQueue, cl_context *context, cl_device_id *devices) {
-
-	cl_int status = 0;
+cl_device_id* getDevices(cl_uint *numDevices, cl_int *status) {
 	
 	cl_uint numPlatforms = 0;
 	cl_platform_id *platforms = NULL;
 
-	status = clGetPlatformIDs(0, NULL, &numPlatforms);
+	*status = clGetPlatformIDs(0, NULL, &numPlatforms);
+	checkError(*status, 19);
 	platforms = (cl_platform_id*)malloc(numPlatforms *sizeof(cl_platform_id));
-	status = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	*status = clGetPlatformIDs(numPlatforms, platforms, NULL);
+	checkError(*status, 22);
 
-	cl_uint numDevices = 0;
+	cl_device_id *devices;
 
-	status = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
-	devices = (cl_device_id*)malloc(numDevices *sizeof(cl_device_id));
-	status = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
+	*status = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, 0, NULL, numDevices);
+	checkError(*status, 27);
+	devices = (cl_device_id*)malloc(*numDevices *sizeof(cl_device_id));
+	*status = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, *numDevices, devices, NULL);
 
-	*context = clCreateContext(NULL, numDevices, devices, NULL, NULL, &status);
-	*cmdQueue = clCreateCommandQueue(*context, devices[0], 0, &status);
-
-	return status;
+	return devices;
 }
 
 cl_program createKernelProgramFromFile(cl_context *context, const char* kernelFileName, cl_int *status) {
@@ -58,7 +57,7 @@ cl_program createKernelProgramFromFile(cl_context *context, const char* kernelFi
 	return program;
 }
 
-void debugKernelWithLog(cl_program program, cl_device_id *devices) {
+void debugKernelProgramWithLog(cl_program program, cl_device_id *devices) {
 
 	size_t log_size;
 	clGetProgramBuildInfo(program, devices[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);

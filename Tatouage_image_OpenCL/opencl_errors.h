@@ -104,6 +104,7 @@ inline void checkError(cl_int errorCode, int line)
     if(errorCode != CL_SUCCESS)
     {
         fprintf(stderr, "Error : %s (Line : %d)\n", clGetErrorString(errorCode), line);
+		system("pause");
         exit(1);
     }
 }

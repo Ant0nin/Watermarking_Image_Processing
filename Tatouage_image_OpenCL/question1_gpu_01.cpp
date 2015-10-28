@@ -180,7 +180,7 @@ int main() {
 	cl_kernel kernel = NULL;
 	// Use clCreateKernel() to create a kernel from the
 	// vector addition function (named "vecadd")
-	kernel = clCreateKernel(program, "max_kernel", &status);
+	kernel = clCreateKernel(program, "reduction", &status);
 
 	//int tmpColsA = colsA, tmpRowsA = rowsA, tmpRowsB = colsA, tmpColsB = colsB;
 

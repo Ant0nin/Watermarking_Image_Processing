@@ -1,4 +1,4 @@
-__kernel void max_kernel(unsigned int N, // number of elements to reduce
+__kernel void reduction(unsigned int N, // number of elements to reduce
 	__global float* input, __global float* output, __global float* outputPos,
 	__local float* sdata, __local float* sdataPos) {
 	// Get index into local data array and global array
