@@ -119,13 +119,14 @@ int main(int argc, char *argv[]) {
 	clEnqueueReadBuffer(cmdQueue, bufferMaxValues, CL_TRUE, 0, datasizeOut, max_values, 0, NULL, NULL);
 	clEnqueueReadBuffer(cmdQueue, bufferMaxPos, CL_TRUE, 0, datasizeOut, max_pos, 0, NULL, NULL);
 
+	// CPU work
 	unsigned int countReduction = pixels_len / (int)localWorkSize;
 	float max = max_values[0];
-	unsigned int pos = max_pos[0];
+	unsigned int pos = (unsigned int)max_pos[0];
 	for (unsigned int i = 1; i < countReduction; i++) {
 		if (max_values[i] > max) {
 			max = max_values[i];
-			pos = max_pos[i];
+			pos = (unsigned int)max_pos[i];
 		}
 	}
 	unsigned int posX = pos % imageWidth;
