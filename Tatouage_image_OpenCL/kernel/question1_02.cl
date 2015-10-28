@@ -1,4 +1,4 @@
-__kernel void max_kernel(__const unsigned int N, // number of elements to reduce
+__kernel void reduction(__const unsigned int N, // number of elements to reduce
 	__const int block,
 	__global float* input, 
 	__global float* output,

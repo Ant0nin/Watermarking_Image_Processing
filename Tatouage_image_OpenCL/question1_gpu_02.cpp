@@ -13,20 +13,17 @@ const char kernel_reduction[] = "reduction";
 int main(int argc, char *argv[]) {
 
 	const char *imageInputPath;
-	const char *imageOutputPath;
 
-	if (argc == 2 || argc > 3) {
-		printf("Need input image path and output image path as program arguments, or nothing to use default values.\n");
+	if (argc > 2) {
+		printf("Need input image path as program argument, or nothing to use default value.\n");
 		system("pause");
 		return ERR_WRONG_INPUT_ARGUMENTS;
 	}
-	else if (argc == 3) {
+	else if (argc == 2) {
 		imageInputPath = argv[1];
-		imageOutputPath = argv[2];
 	}
 	else {
 		imageInputPath = "image/lena.bmp";
-		imageOutputPath = "image/output.bmp";
 	}
 
 	int imageWidth, imageHeight;

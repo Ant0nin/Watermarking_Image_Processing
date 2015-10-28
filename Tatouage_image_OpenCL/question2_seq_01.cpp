@@ -9,26 +9,26 @@
 
 int main(int argc, char *argv[]) {
 
-	const char *imageInputPath;
-	const char *imageOutputPath;
+	const char *imageOriginalPath;
+	const char *imageCryptedPath;
 
 	if (argc == 2 || argc > 3) {
-		printf("Need input image path and output image path as program arguments, or nothing to use default values.\n");
+		printf("Need original image path and crypted image path as program arguments, or nothing to use default values.\n");
 		system("pause");
 		return ERR_WRONG_INPUT_ARGUMENTS;
 	}
 	else if (argc == 3) {
-		imageInputPath = argv[1];
-		imageOutputPath = argv[2];
+		imageOriginalPath = argv[1];
+		imageCryptedPath = argv[2];
 	}
 	else {
-		imageInputPath = "image/lena.bmp";
-		imageOutputPath = "image/output.bmp";
+		imageOriginalPath = "image/lena.bmp";
+		imageCryptedPath = "image/output.bmp";
 	}
 
 	int imageWidth, imageHeight;
 	float *image = NULL;
-	image = readImage(imageInputPath, &imageWidth, &imageHeight);
+	image = readImage(imageOriginalPath, &imageWidth, &imageHeight);
 
 	srand(time(NULL));
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	unsigned int shift;
 	float diff = 1.0;
 
-	printf("Encoding message...\n");
+	printf("Encoding message... ");
 	for (int i = 0; i < msgLength; i++) {
 		shift = rand() % maxShift;
 		position = maxShift * i + shift;
@@ -64,8 +64,9 @@ int main(int argc, char *argv[]) {
 		else
 			image[position] -= diff; //!\ Pb valeurs extrêmes
 	}
+	printf("Done.\n");
 
-	storeImage(image, imageOutputPath, imageHeight, imageWidth, imageInputPath);
+	storeImage(image, imageCryptedPath, imageHeight, imageWidth, imageOriginalPath);
 
 	system("pause");
 	return EXIT_SUCCESS;
