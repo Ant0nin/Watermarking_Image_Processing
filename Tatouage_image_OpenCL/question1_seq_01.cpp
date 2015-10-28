@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "bmpfuncs.h"
 
-#define ERR_WRONG_INPUT_ARGUMENTS 1
-
 int main(int argc, char *argv[]) {
 
 	const char *imageInputPath;
@@ -11,7 +9,7 @@ int main(int argc, char *argv[]) {
 	if (argc > 2) {
 		printf("Need input image path as program argument, or nothing to use default value.\n");
 		system("pause");
-		return ERR_WRONG_INPUT_ARGUMENTS;
+		return EXIT_FAILURE;
 	}
 	else if (argc == 2) {
 		imageInputPath = argv[1];
@@ -59,6 +57,6 @@ int main(int argc, char *argv[]) {
 	printf("-------------------------------------------\n");
 	printf("\n");
 
-	system("pause");
+	//system("pause");
 	return EXIT_SUCCESS;
 }

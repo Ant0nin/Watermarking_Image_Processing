@@ -2,8 +2,6 @@
 #include <cstdlib>
 #include "bmpfuncs.h"
 
-#define ERR_WRONG_INPUT_ARGUMENTS 1
-
 int main(int argc, char *argv[]) {
 
 	const char *imageOriginalPath;
@@ -12,7 +10,7 @@ int main(int argc, char *argv[]) {
 	if (argc == 2 || argc > 3) {
 		printf("Need original image path and crypted image path as program arguments, or nothing to use default values.\n");
 		system("pause");
-		return ERR_WRONG_INPUT_ARGUMENTS;
+		return EXIT_FAILURE;
 	}
 	else if (argc == 3) {
 		imageOriginalPath = argv[1];
@@ -66,6 +64,6 @@ int main(int argc, char *argv[]) {
 	printf("-------------------------------------------\n");
 	printf("\n");
 
-	system("pause");
+	//system("pause");
 	return EXIT_SUCCESS;
 }

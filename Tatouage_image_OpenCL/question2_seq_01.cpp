@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "bmpfuncs.h"
 
-#define ERR_WRONG_INPUT_ARGUMENTS 1
-
 #define MSG_LENGTH 1024
 
 int main(int argc, char *argv[]) {
@@ -13,9 +11,9 @@ int main(int argc, char *argv[]) {
 	const char *imageCryptedPath;
 
 	if (argc == 2 || argc > 3) {
-		printf("Need original image path and crypted image path as program arguments, or nothing to use default values.\n");
+		printf("Need input image path and output image path as program arguments, or nothing to use default values.\n");
 		system("pause");
-		return ERR_WRONG_INPUT_ARGUMENTS;
+		return EXIT_FAILURE;
 	}
 	else if (argc == 3) {
 		imageOriginalPath = argv[1];
@@ -68,6 +66,6 @@ int main(int argc, char *argv[]) {
 
 	storeImage(image, imageCryptedPath, imageHeight, imageWidth, imageOriginalPath);
 
-	system("pause");
+	//system("pause");
 	return EXIT_SUCCESS;
 }

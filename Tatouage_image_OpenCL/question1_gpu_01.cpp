@@ -5,8 +5,6 @@
 #include "opencl_errors.h"
 #include "bmpfuncs.h"
 
-#define ERR_WRONG_INPUT_ARGUMENTS 1
-
 const char clFile_reduction[] = "question1_01";
 const char kernel_reduction[] = "reduction";
 
@@ -17,7 +15,7 @@ int main(int argc, char *argv[]) {
 	if (argc > 2) {
 		printf("Need input image path as program argument, or nothing to use default value.\n");
 		system("pause");
-		return ERR_WRONG_INPUT_ARGUMENTS;
+		return EXIT_FAILURE;
 	}
 	else if (argc == 2) {
 		imageInputPath = argv[1];
@@ -154,6 +152,6 @@ int main(int argc, char *argv[]) {
 	free(max_pos);
 	free(devices);
 
-	system("pause");
-	return CL_SUCCESS;
+	//system("pause");
+	return EXIT_SUCCESS;
 }

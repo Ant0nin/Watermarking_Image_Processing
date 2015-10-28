@@ -7,9 +7,9 @@
 
 #define MSG_LENGTH 1024
 
-const char clFile_encoding[] = "question3_01";
+const char clFile_encoding[] = "question4_01";
 const char kernel_calcEcartType[] = "calcEcartTypeForEachSample";
-const char kernel_maxEcartType[] = "maxEcartType";
+const char kernel_sortArray[] = "sortArray";
 const char kernel_writeMessage[] = "writeMessageOnImage";
 
 int main(int argc, char *argv[]) {
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
 	// Input
 	const int imgLength = (const int)(imageWidth * imageHeight);
-	const int datasize = (const int)((imageWidth -2) * (imageHeight -2));
+	const int datasize = (const int)((imageWidth - 2) * (imageHeight - 2));
 
 	unsigned int sampleWidth = 3;
 	unsigned int sampleHeight = 3;
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 	status = clEnqueueReadBuffer(cmdQueue, bufferPositionX, CL_TRUE, 0, sizeof(int) * datasize, positionsX, 0, NULL, NULL);
 	status = clEnqueueReadBuffer(cmdQueue, bufferPositionY, CL_TRUE, 0, sizeof(int) * datasize, positionsY, 0, NULL, NULL);
 
-	// Second kernel : Recherche des plus grands ecarts types par tranche
+	// Second kernel : Tri des écarts types de la totalité de l'image dans l'ordre croissant
 
 	float *maxEcartTypes = NULL;
 	maxEcartTypes = (float*)malloc(sizeof(float) * msgSize);
@@ -144,7 +144,6 @@ int main(int argc, char *argv[]) {
 	int blockSize = datasize / msgSize;
 
 	status = clSetKernelArg(kernel, 0, sizeof(cl_int), &datasize);
-	status = clSetKernelArg(kernel, 1, sizeof(cl_int), &blockSize);
 	status = clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufferEcartType);
 	status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &bufferPosition);
 
@@ -177,16 +176,8 @@ int main(int argc, char *argv[]) {
 	status = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, globalWorkSize1D, NULL, 0, NULL, NULL);
 
 	status = clEnqueueReadBuffer(cmdQueue, bufferImageOriginal, CL_TRUE, 0, sizeof(float) * imgLength, image, 0, NULL, NULL);
-	
-	printf("Done.\n");
 
-	printf("\n");
-	printf("-------------------------------------------\n");
-	printf("Quantity of image pixels: %d \n", (int)imgLength);
-	printf("Local worksize: %d \n", (int)localWorkSize);
-	printf("Kernel(s) execution time : %0.3f ms \n", (total_time / 1000000.0));
-	printf("-------------------------------------------\n");
-	printf("\n");
+	printf("Done.\n");
 
 	storeImage(image, imageCryptedPath, imageWidth, imageHeight, imageOriginalPath);
 
@@ -204,6 +195,6 @@ int main(int argc, char *argv[]) {
 	free(image);
 	free(devices);
 
-	//system("pause");
+	system("pause");
 	return EXIT_SUCCESS;
 }

@@ -1,11 +1,11 @@
 __kernel void calcEcartTypeForEachSample(
-	__global float* imageInput, unsigned int imgWidth, unsigned int imgHeight, 
+	__global float* imageInput, unsigned int imgWidth, unsigned int imgHeight,
 	unsigned int sampleWidth, unsigned int sampleHeight, const unsigned int sampleLength,
 	__global float *outputEcartType, __global int *outputPositionsX, __global int *outputPositionsY)
 {
 	int2 pixPos = { get_global_id(0), get_global_id(1) };
 
-	if (pixPos.x != 0 && pixPos.x != (imgWidth - 1) && pixPos.y != 0 && pixPos.y != (imgHeight - 1)) 
+	if (pixPos.x != 0 && pixPos.x != (imgWidth - 1) && pixPos.y != 0 && pixPos.y != (imgHeight - 1))
 	{
 		float intensities[9];
 
@@ -16,7 +16,7 @@ __kernel void calcEcartTypeForEachSample(
 		{
 			for (int j = 0; j < sampleWidth; j++)
 			{
-				int indexIntensities = (i) + sampleWidth*(j);
+				int indexIntensities = (i)+sampleWidth*(j);
 				int indexImage = (pixPos.x + i - 1) + (pixPos.y + j - 1) * imgWidth;
 				intensities[indexIntensities] = imageInput[indexImage];
 
@@ -43,31 +43,12 @@ __kernel void calcEcartTypeForEachSample(
 	}
 }
 
-__kernel void maxEcartType(__const unsigned int N, // taille de l'ensemble des écarts types
-	__const int block, // taille de la tranche
+__kernel void sortArray(__const unsigned int N, // taille de l'ensemble des écarts types
 	__global float* input, // ecart types
 	__global int* outputPos) {
 
-	int global_index = get_global_id(0) * block;
-	float accumulator = 0;
-	int position = 0;
-	int upper_lim = (get_global_id(0) + 1) * block;
+	// TODO
 
-	if (upper_lim > N)
-		upper_lim = N;
-
-	while (global_index < upper_lim) {
-		float element = input[global_index];
-		if (accumulator < element) {
-			accumulator = element;
-
-			position = global_index + (512-1) + 2 * (int)(global_index/512) + 3; // strange offset
-		}
-		global_index++;
-	}
-
-	int groupId = get_group_id(0);
-	outputPos[groupId] = position;
 }
 
 
