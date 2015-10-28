@@ -2,53 +2,70 @@
 #include <cstdlib>
 #include "bmpfuncs.h"
 
-//#define MSG_LENGTH 1024
+#define ERR_WRONG_INPUT_ARGUMENTS 1
 
-int main() {
+int main(int argc, char *argv[]) {
 
-	char pathImage2D_clean[] = "image/lena.bmp";
-	char pathImage2D_crypted[] = "image/output.bmp";
+	const char *imageOriginalPath;
+	const char *imageCryptedPath;
 
-	int width;
-	int height;
+	if (argc == 2 || argc > 3) {
+		printf("Need original image path and crypted image path as program arguments, or nothing to use default values.\n");
+		system("pause");
+		return ERR_WRONG_INPUT_ARGUMENTS;
+	}
+	else if (argc == 3) {
+		imageOriginalPath = argv[1];
+		imageCryptedPath = argv[2];
+	}
+	else {
+		imageOriginalPath = "image/lena.bmp";
+		imageCryptedPath = "image/output.bmp";
+	}
 
-	float* image2D_clean;
-	float* image2D_crypted;
+	// Input
 
-	image2D_clean = readImage(pathImage2D_clean, &width, &height);
-	image2D_crypted = readImage(pathImage2D_crypted, &width, &height);
+	int imageWidth, imageHeight;
+	float *imageOriginal = NULL;
+	imageOriginal = readImage(imageOriginalPath, &imageWidth, &imageHeight);
+	float *imageCrypted = NULL;
+	imageCrypted = readImage(imageCryptedPath, &imageWidth, &imageHeight);
 
-	int imgLength = width * height;
-
+	int imgLength = imageWidth * imageHeight;
 	int count = 0;
 	for (int i = 0; i < imgLength; i++) {
-		if (image2D_crypted[i] != image2D_clean[i])
+		if (imageCrypted[i] != imageOriginal[i])
 			count++;
 	}
 
 	const size_t msgLength = count;
 	bool *message;
 	message = (bool*)malloc(msgLength);
-	printf("Differents=%d,\n",count );
 	int j = 0;
+
 	for (int i = 0; i < imgLength; i++) {
-		if (image2D_crypted[i] < image2D_clean[i]) {
+		if (imageCrypted[i] < imageOriginal[i]) {
 			message[j] = 0;
 			j++;
 		}
-		else if (image2D_crypted[i] > image2D_clean[i]) {
+		else if (imageCrypted[i] > imageOriginal[i]) {
 			message[j] = 1;
 			j++;
 		}
-
 	}
-	printf("Dernier=%d\n",j );
 
+	// Display
+	printf("\n");
+	printf("-------------------------------------------\n");
+	printf("Binary message length: %d bits\n", count);
+	printf("Binary message content:\n");
 	for (int i = 0; i < msgLength; i++) {
 		printf("%d", message[i]);
 	}
 	printf("\n");
+	printf("-------------------------------------------\n");
+	printf("\n");
 
 	system("pause");
-
+	return EXIT_SUCCESS;
 }
