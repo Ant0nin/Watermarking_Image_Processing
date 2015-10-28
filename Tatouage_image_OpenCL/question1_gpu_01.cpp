@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
 		return ERR_WRONG_INPUT_ARGUMENTS;
 	}
 	else if (argc == 3) {
-		imageInputPath = argv[0];
-		imageOutputPath = argv[1];
+		imageInputPath = argv[1];
+		imageOutputPath = argv[2];
 	}
 	else {
 		imageInputPath = "image/lena.bmp";
